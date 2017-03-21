@@ -1,14 +1,14 @@
 /* ROOT Component of your App  */
 
 import React, { Component } from 'react'
-import logo from './logo.svg'
+import logo from './logo1.jpg'
 import './App.css'
 
 import defaultPicture from './components/img/default.jpg'
 
 const Materialize = window.Materialize
 
-const APP_TITLE = 'Awesome App'
+const APP_TITLE = 'What championship do u want?'
 //update document title (displayed in the opened browser tab)
 document.title = APP_TITLE
 
@@ -16,7 +16,7 @@ document.title = APP_TITLE
 import { get, ENDPOINTS } from './utils/api'
 
 //components
-import WeatherCard from './components/WeatherCard'
+import captionCard from './components/captionCard'
 
 class App extends Component {
 
@@ -25,9 +25,9 @@ class App extends Component {
     constructor( props ) {
         super( props )
         this.state = {
-            weather: undefined,
-            city: ''
-        }
+          caption: '',
+                      league: ''
+          }
     }
 
 
@@ -42,17 +42,17 @@ class App extends Component {
                 <div className="App-content">
                     <div className="center-align">
 
-                        <form onSubmit={ this.fetchWeather }>
+                        <form onSubmit={ this.fetchcaption }>
 
                             <div className="row" style={ { marginBottom: 0 } }>
                                 <div className="input-field col s6 offset-s3">
-                                    <input id="cityInput" type="text" value={ this.state.city } onChange={ this.handleChange } />
-                                    <label htmlFor="cityInput">City</label>
+                                    <input id="leagueInput" type="text" value={ this.state.league } onChange={ this.handleChange } />
+                                    <label htmlFor="leagueInput">Write the name of a football league (in his own language)</label>
                                 </div>
                             </div>
 
                             <button type="submit" className="waves-effect waves-light btn">
-                                Weather?
+                                caption?
                             </button>
 
                         </form>
@@ -61,7 +61,7 @@ class App extends Component {
 
                     <div className="row" style={ { marginTop: 20 } } >
                         <div className="col s12 m6 offset-m3">
-                            { this.displayWeatherInfo() }
+                            { this.displaycaptionInfo() }
                         </div>
                     </div>
                 </div>
@@ -74,43 +74,30 @@ class App extends Component {
 
     handleChange = ( event ) => {
         this.setState( {
-            city: event.target.value
+            league: event.target.value
         } )
     }
 
 
-    //method triggered by onSubmit event of the form or by onClick event of the "Weather?" button
+    //method triggered by onSubmit event of the form or by onClick event of the "caption?" button
     /* Arrow function syntax used for Autobinding, see details here : https://facebook.github.io/react/docs/react-without-es6.html#autobinding */
-    fetchWeather = async ( event ) => {
+    fetchcaption = async ( event ) => {
 
         event.preventDefault()
 
         /* ASYNC - AWAIT DOCUMENTATION : https://developer.mozilla.org/fr/docs/Web/JavaScript/Reference/Op%C3%A9rateurs/await */
 
         try {
-            let weather = await get( ENDPOINTS.WEATHER_API_URL, {
-                //YOU NEED TO PROVIDE YOUR "APIXU" API KEY HERE, see /utils/api.js file to grab the DOCUMENTATION file
-                key: '07fb607594c34e5b9ca213416172302',
-                q: this.state.city
-            } )
+          var caption = "";
+          caption = this.state.league;
+          caption = caption.replace(/ /g,"+");
+          var url = "http://api.football-data.org/v1/soccerseasons" + caption;
 
-            //checking that we received a well-formated weather object
-            if ( weather.current ) {
-                //weather data is now received from the server thanks to async-await
-                let updatedWeatherWithImage = await this.fetchPicture( weather )
+          let updatedcaption = await this.fetchPicture(caption)
 
-                /* React state DOCUMENTATION : https://facebook.github.io/react/docs/lifting-state-up.html */
-                this.setState( {
-                    weather: updatedWeatherWithImage
-                } )
-            }
-            //handling error
-            else {
-                console.log( weather )
-                //weather will contain an error object (see APIXU DOCUMENTATION)
-                Materialize.toast( weather.error.message, 8000, 'error-toast' )
-                //Using Materialize toast component to display error messages - see http://materializecss.com/dialogs.html
-            }
+              this.setState({
+              caption: updatedcaption
+          })
 
 
         }
@@ -119,52 +106,40 @@ class App extends Component {
             console.log( 'Failed fetching data: ', error )
         }
 
-    }
 
-    //will fetch a picture with the name of the city fetched by the weather API
-    //will return an updated weather object (same object + one image)
-    fetchPicture = async ( weather ) => {
-        try {
+        var request = require('request-promise');
 
-            const pictures = await get( ENDPOINTS.PIXABAY_API_URL, {
-                //YOU NEED TO PROVIDE YOUR "PIXABAY" API KEY HERE (see /utils/api.js file to grab the DOCUMENTATION link)
-                key: '3658891-beeef4fdb6b8a762ab78e1cf9',
-                q: weather.location.name + '+city',
-                image_type: 'all',
-                safesearch: true
-            } )
+        var options= {
+        headers: {'X-Auth-Token': 'c3d6342a5384462c95524b2ddb68248d'},
+        url: 'http://api.football-data.org/v1/soccerseasons',
+        type:'GET',
+        };
 
-            //if we have results
-            if ( pictures.hits.length ) {
-                //saving the first picture of the results in our weather object
-                weather.pixabayPicture = pictures.hits[ 0 ].webformatURL
-            }
-            //else we save a defalut picture in our weather object
-            else {
-                weather.pixabayPicture = defaultPicture
-            }
+        request.get(options).then(function(body) {
+        var json = JSON.parse(body);
 
-        }
-        //same default picture is saved if the image request fails
-        catch ( error ) {
-
-            weather.pixabayPicture = defaultPicture
-
-            Materialize.toast( error, 8000, 'error-toast' )
-            console.log( 'Failed fetching picture: ', error )
-        }
-
-        return weather
+        console.log(json);
+      })
     }
 
 
-    //handle display of the received weather object
-    displayWeatherInfo = () => {
-        const weather = this.state.weather
+
+    //will fetch a picture with the name of the league fetched by the caption API
+    //will return an updated caption object (same object + one image)
+    fetchPicture = async ( caption ) => {
+
+
+        return caption
+    }
+
+
+    //handle display of the received caption object
+    displaycaptionInfo = () => {
+        const caption = this.state.caption
 
         /*
             DATA FORMAT SENT BY THE API LOKKS LIKE THIS :
-    
+
             {
                 "pixabayPicture": string, //CUSTOM ADD VIA PIXABAY API CALL
                 "location": {
@@ -187,24 +162,24 @@ class App extends Component {
                     "wind_kph": number
                 }
             }
-    
+
         */
 
-        if ( weather ) {
+        if ( caption ) {
 
-            const locationName = weather.location.name
-            const temperature = weather.current.temp_c
-            const weatherConditionText = weather.current.condition.text
-            const weatherConditionIcon = weather.current.condition.icon
-            const windSpeed = weather.current.wind_kph
-            const picture = weather.pixabayPicture
+            const locationName = caption.location.name
+            const temperature = caption.current.temp_c
+            const captionConditionText = caption.current.condition.text
+            const captionConditionIcon = caption.current.condition.icon
+            const windSpeed = caption.current.wind_kph
+            const picture = caption.pixabayPicture
 
             return (
-                <WeatherCard
+                <captionCard
                     locationName={ locationName }
                     temperature={ temperature }
-                    weatherConditionText={ weatherConditionText }
-                    weatherConditionIcon={ weatherConditionIcon }
+                    captionConditionText={ captionConditionText }
+                    captionConditionIcon={ captionConditionIcon }
                     windSpeed={ windSpeed }
                     picture={ picture } />
             )
